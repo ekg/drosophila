@@ -1,5 +1,7 @@
 # mercatorum wildtype assembly and polishing
 
+## assembly
+
 First we generate the assembly from the ONT data using wtdbg2.
 
 ```
@@ -28,6 +30,12 @@ bcftools concat -nf concat_list.txt | bcftools view -Ou -e'type="ref"' | bcftool
 # and applying the polishing
 bcftools consensus -i'QUAL>1 && (GT="AA" || GT="Aa")' -Hla -f asm1/mercatorum_wildtype.ont.wtdbg2.asm1.cns.fa asm1/mercatorum_wildtype.illumina.bcf >asm1/mercatorum_wildtype.ont.wtdbg2.asm1.cns.polish.fa
 ```
+
+This same process was repeated for both the wildtype and parthenogenic strains.
+
+## alignments
+
+We wanted to understand the relationship between the assemblies (`dmerc_wildtype` and `dmerc_partho`), and between both and the drosophila melanogaster reference genome (`dmel6`).
 
 And make alignments:
 
@@ -69,7 +77,9 @@ The average identities shown here, and the total length in the alignment:
 146250790
 ```
 
-And finally we did a coverage analysis using the input ONT reads to measure the completeness of the assemblies.
+## coverage analysis
+
+Finally we completed a coverage analysis using the input ONT reads to measure the completeness of the assemblies.
 
 First with mapping:
 
