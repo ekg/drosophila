@@ -1,4 +1,9 @@
-# mercatorum wildtype assembly and polishing
+# drosophila mercatorum genome assemblies
+
+This summarizes steps required to build and evaluate a drosophila mercatorum genome assembly.
+Two assemblies are made using the same process, one for drosophila mercatorum wildtype, and another for a parthenogenic laboratory strain.
+These are compared to each other, and to the drosophila melanogaster reference genome.
+A coverage analysis shows that both assemblies are of high quality.
 
 ## assembly
 
