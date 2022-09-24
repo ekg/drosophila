@@ -50,36 +50,51 @@ fastix -p "dmerc_wildtype#" mercatorum_wildtype.ont.wtdbg2.asm1.cns.polish.fa | 
 fastix -p "dmel6#" GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna | bgzip -@ 24 >dmel6.fa.gz && samtools faidx dmel6.fa.gz
 ```
 
-Then, with version `/gnu/store/d6ajy0ajxkbb22gkgi32g5c4jy8rs8bv-wfmash-0.6.0+948f168-21/bin/wfmash` of wfmash:
+Then, with version `/gnu/store/afyq274dvnz71y7mmrsp53kx6r0m71fv-wfmash-0.9.2+1722e9e-1/bin/wfmash` of wfmash:
 
 Align the two mercatorum strains to dmel6 reference.
 
 ```
-wfmash -p 70 -w 17 -s 5000 -l 0 -O -t 48 dmel6.fa.gz dmerc_partho.fa.gz >dmel6_vs_dmerc_partho.17.paf
-
-wfmash -p 70 -w 17 -s 5000 -l 0 -O -t 48 dmel6.fa.gz dmerc_wildtype.fa.gz >dmel6_vs_dmerc_wildtype.17.paf
+wfmash -p 70 -t 48 dmel6.fa.gz dmerc_wildtype.fa.gz | gzip >dmel6_vs_dmerc_wildtype.26.paf.gz
+wfmash -p 70 -t 48 dmel6.fa.gz dmerc_partho.fa.gz | gzip >dmel6_vs_dmerc_partho.paf.26.gz
 ```
 
-The alignment between the two assemblies we made is easier because the divergence is much lower, so the settings are different:
+The alignment between the two assemblies we made is easier because the divergence is much lower, so we leave default settings in wfmash:
 
 ```
-wfmash -p 95 -t 48 dmerc_wildtype.fa.gz dmerc_partho.fa.gz >dmerc_wildtype_vs_dmerc_partho.p95.paf
+wfmash -t 48 dmerc_wildtype.fa.gz dmerc_partho.fa.gz | gzip >dmerc_wildtype_vs_dmerc_partho.25.paf.gz
 ```
 
-The average identities shown here, and the total length in the alignment:
+We compute summary statistics on top of the outputs of the alignments.
+
+The two mercatorum strains have about 1.33% divergence between them, when using [gap compressed identity](http://lh3.github.io/2018/11/25/on-the-definition-of-sequence-identity).
 
 ```
--> % < dmel6_vs_dmerc_partho.17.paf | sed 's/gi:f://' | awk '$13 > 0.55' | awk '{ sum += $13 * $11; tot += $11; } END { print sum/tot; print tot; }'
-0.63003
-50242551
+-> % f=dmerc_wildtype_vs_dmerc_partho.25.paf.gz ; zcat $f | sed s/gi:f:// | awk '{ sum += $13 * $10; tot += $10; block += $11; } END { print "matches",tot; print "block",block; print "gap.id", sum/tot; print "block.id",tot/block * 100; }'
+matches 142245925
+block 151145805
+gap.id 98.6674
+block.id 94.1117
+```
 
--> % < dmel6_vs_dmerc_wildtype.17.paf | sed 's/gi:f://' | awk '$13 > 0.55' | awk '{ sum += $13 * $11; tot += $11; } END { print sum/tot; print tot; }'
-0.63238
-50207983
+In contrast, between the wildtype and melanogaster, we see 24.2% divergence.
 
--> % < dmerc_wildtype_vs_dmerc_partho.p95.paf | sed 's/gi:f://' | awk '$13 > 0.55' | awk '{ sum += $13 * $11; tot += $11; } END { print sum/tot; print tot; }'
-0.98591
-146250790
+```
+-> % f=dmel6_vs_dmerc_wildtype.26.paf.gz ; zcat $f | sed s/gi:f:// | awk '{ sum += $13 * $10; tot += $10; block += $11; } END { print "matches",tot; print "block",block; print "gap.id", sum/tot; print "block.id",tot/block * 100; }'
+matches 17679988
+block 75282428
+gap.id 75.8478
+block.id 23.4849
+```
+
+And between the parthenote and melanogaster, we see 24.5% divergence.
+
+```
+-> % f=dmel6_vs_dmerc_partho.26.paf.gz ; zcat $f | sed s/gi:f:// | awk '{ sum += $13 * $10; tot += $10; block += $11; } END { print "matches",tot; print "block",block; print "gap.id", sum/tot; print "block.id",tot/block * 100; }'
+matches 17696931
+block 73444426
+gap.id 75.548
+block.id 24.0957
 ```
 
 ## coverage analysis
@@ -126,3 +141,86 @@ And the depth of coverage is high in both assemblies:
 ```
 
 So 79.2X on average in the wildtype and 93.9X in the parthenote.
+
+
+## self heterozygosity analysis
+
+To establish estimates for pairwise heterozygosity in each strain, we aligned the illumina data used for polishing back to the assemblies.
+
+```
+bwa mem -t 24 assemblies/dmerc_wildtype.fa.gz mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_1.fq.gz mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_2.fq.gz >dmerc_wildtype.illumina.sam && samtools view  -b dmerc_wildtype.illumina.sam >dmerc_wildtype.illumina.bam && sambamba sort -t 24 dmerc_wildtype.illumina.bam
+bwa mem -t 24 assemblies/dmerc_partho.fa.gz mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_1.fq.gz mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_2.fq.gz >dmerc_partho.illumina.sam && samtools view  -b dmerc_partho.illumina.sam >dmerc_partho.illumina.bam && sambamba sort -t 24 dmerc_partho.illumina.bam
+```
+
+We then call variants.
+
+```
+freebayes -f assemblies/dmerc_wildtype.fa dmerc_wildtype.illumina.sorted.bam >dmerc_wildtype.illumina.vcf
+freebayes -f assemblies/dmerc_partho.fa dmerc_partho.illumina.sorted.bam >dmerc_partho.illumina.vcf
+```
+
+Normalize them using vcfwave.
+
+```
+<dmerc_partho.illumina.vcf awk '/^#/ || NF == 10' | vcffilter -f 'QUAL > 20' | vcfwave | vcffilter -f 'TYPE = snp' >dmerc_partho.illumina.q20wave.vcf
+<dmerc_wildtype.illumina.vcf awk '/^#/ || NF == 10' | vcffilter -f 'QUAL > 20' | vcfwave | vcffilter -f 'TYPE = snp' >dmerc_wildtype.illumina.q20wave.vcf
+```
+
+And measure heterozygosity using bcftools.
+
+```
+-> % bcftools stats -s - dmerc_partho.illumina.q20wave.vcf | grep ^PSC | cut -f 6
+16474
+```
+
+That's 16k heterozygous SNPs in the entire parthenote genome.
+The genome is 161570079bp, suggesting a pairwise heterozygosity of 0.0102%.
+
+In contrast, the wildtype genome has higher heterozygosity.
+
+```
+-> % bcftools stats -s - dmerc_wildtype.illumina.q20wave.vcf | grep ^PSC | cut -f 6
+109035
+```
+
+The genome is 171182504bp, suggesting a pairwise heterozygosity of 0.0637%.
+
+## inter-strain divergence
+
+To establish if the estimates for inter-strain divergence of around 1% that we established by alignment of the genomes were correct, we then repeated the above analysis, but for each strain we aligned it against the other mercatorum assembly, and called variants.
+
+```
+bwa mem -t 48 assemblies/dmerc_wildtype.fa.gz mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_1.fq.gz mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_2.fq.gz >dmerc_partho.vs_wildtype.illumina.sam && samtools view  -b dmerc_partho.vs_wildtype.illumina.sam >dmerc_partho.vs_wildtype.illumina.bam && sambamba sort -t 48 dmerc_partho.vs_wildtype.illumina.bam && freebayes -f assemblies/dmerc_wildtype.fa dmerc_partho.vs_wildtype.illumina.sorted.bam >dmerc_partho.vs_wildtype.illumina.vcf
+bwa mem -t 48 assemblies/dmerc_partho.fa.gz mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_1.fq.gz mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_2.fq.gz >dmerc_wildtype.vs_partho.illumina.sam && samtools view  -b dmerc_wildtype.vs_partho.illumina.sam >dmerc_wildtype.vs_partho.illumina.bam && sambamba sort -t 48 dmerc_wildtype.vs_partho.illumina.bam && freebayes -f assemblies/dmerc_partho.fa dmerc_wildtype.vs_partho.illumina.sorted.bam >dmerc_wildtype.vs_partho.illumina.vcf
+```
+
+We normalized these as before.
+
+```
+<dmerc_wildtype.vs_partho.illumina.vcf awk '/^#/ || NF == 10' | vcffilter -f 'QUAL > 20' | vcfwave | vcffilter -f 'TYPE = snp' >dmerc_wildtype.vs_partho.illumina.q20wave.vcf
+<dmerc_partho.vs_wildtype.illumina.vcf awk '/^#/ || NF == 10' | vcffilter -f 'QUAL > 20' | vcfwave | vcffilter -f 'TYPE = snp' >dmerc_partho.vs_wildtype.illumina.q20wave.vcf
+```
+
+And measured the number of non-reference homozogyous SNPs (not hets) for the parthenote:
+
+```
+-> % bcftools stats -s - dmerc_partho.vs_wildtype.illumina.q20wave.vcf | grep ^PSC | cut -f 5
+1442703
+```
+
+This suggests a strain-wise divergence of 0.84%.
+
+```
+-> % bcftools stats -s - dmerc_wildtype.vs_partho.illumina.q20wave.vcf | grep ^PSC | cut -f 5  
+1328517
+```
+
+We see the same for the other direction, with an estimate of 0.82%.
+
+Due to our focus on SNPs, and limitation to non-reference homozygous cases, these should be strict underestimates of the pairwise divergence.
+However, they support the idea that the mercatorum strains differ by around 1%.
+
+## merqury kmer spectrum analysis
+
+We have estimated a very low heterozygosity level for both mercatorum strains.
+To further evaluate this, we explored the kmer copy spectrum of the assemblies relative to their respective illumina read sets using [merqury](https://github.com/marbl/merqury).
