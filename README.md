@@ -174,7 +174,7 @@ And measure heterozygosity using bcftools.
 ```
 
 That's 16k heterozygous SNPs in the entire parthenote genome.
-The genome is 161570079bp, suggesting a pairwise heterozygosity of 0.0102%.
+The genome is 161570079bp, suggesting a pairwise heterozygosity of 0.0102% _for SNPs_.
 
 In contrast, the wildtype genome has higher heterozygosity.
 
@@ -183,7 +183,9 @@ In contrast, the wildtype genome has higher heterozygosity.
 109035
 ```
 
-The genome is 171182504bp, suggesting a pairwise heterozygosity of 0.0637%.
+The genome is 171182504bp, suggesting a pairwise heterozygosity of 0.0637% _for SNPs_.
+
+These are likely underestimates, but the basis of the assemblies in ONT means that we can't easily repeat this analysis for indels, which will have a much higher error rate.
 
 ## inter-strain divergence
 
@@ -224,3 +226,7 @@ However, they support the idea that the mercatorum strains differ by around 1%.
 
 We have estimated a very low heterozygosity level for both mercatorum strains.
 To further evaluate this, we explored the kmer copy spectrum of the assemblies relative to their respective illumina read sets using [merqury](https://github.com/marbl/merqury).
+
+<img src="https://github.com/ekg/drosophila/raw/main/dmerc_partho.merqury.dmerc_partho.spectra-cn.hist.png">
+
+<img src="https://github.com/ekg/drosophila/raw/main/dmerc_wildtype.merqury.dmerc_wildtype.spectra-cn.hist.png">
