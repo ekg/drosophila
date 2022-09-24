@@ -227,6 +227,42 @@ However, they support the idea that the mercatorum strains differ by around 1%.
 We have estimated a very low heterozygosity level for both mercatorum strains.
 To further evaluate this, we explored the kmer copy spectrum of the assemblies relative to their respective illumina read sets using [merqury](https://github.com/marbl/merqury).
 
+We first built meryl databases for the read sets:
+
+```
+zcat mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_1.fq.gz mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_2.fq.gz | pigz >mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_both.fq.gz
+zcat mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_1.fq.gz mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_2.fq.gz | pigz >mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_both.fq.gz
+file=mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_both.fq.gz meryl k=19 count output $file.meryl $file
+file=mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_both.fq.gz meryl k=19 count output $file.meryl $file
+```
+
+Then we ran merqury.
+
+```
+merqury.sh mercatorum_parthenote/illumina/SLX-18526.DNAA001.HGYGGDRXX.s_2.r_both.fq.gz.meryl assemblies/dmerc_partho.fa dmerc_partho.merqury
+merqury.sh mercatorum_wildtype/illumina/SLX-18528.NEBNext04.000000000-K3MKR.s_1.r_both.fq.gz.meryl assemblies/dmerc_wildtype.fa dmerc_wildtype.merqury
+```
+
+This analysis suggests QV (quality values) for the assemblies of 28.6212 for the parthenote and 26.545 for the wildtype strain.
+These are close to 1 error per thousand (QV=30) and acceptable for the use in our analysis.
+
+We additionally plotted the kmer copy number spectra for both assemblies, using R:
+
+```R
+x <- read.delim('dmerc_wildtype.merqury.dmerc_wildtype.spectra-cn.hist')
+x$Copies <- as.factor(x$Copies)
+ggplot(x, aes(x=kmer_multiplicity, y=Count, color=Copies)) + geom_line() + coord_cartesian(ylim=c(0,6.5e6), xlim=c(0,100))
+```
+
+For the parthenote:
+
 <img src="https://github.com/ekg/drosophila/raw/main/dmerc_partho.merqury.dmerc_partho.spectra-cn.hist.png">
 
+For the wildtype:
+
 <img src="https://github.com/ekg/drosophila/raw/main/dmerc_wildtype.merqury.dmerc_wildtype.spectra-cn.hist.png">
+
+We observe a single homozygous peak (1x in assembly, and average read depth in the illumina data).
+This is expected due to our generation of non-haplotype resolved assemblies.
+We do not observe a 2x peak that might correspond to duplicated haplotype-specific contigs.
+This is consistent with the low heterozygosity of these strains.
